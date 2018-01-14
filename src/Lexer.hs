@@ -26,6 +26,8 @@ data Token
     | Comma
     | Dollar
     | DoubleArrow
+    | LArrow
+    | RArrow
     | DoubleColon
     | Indent Int
     | LName Text
@@ -54,6 +56,8 @@ ppToken (Pipe)        = "|"
 ppToken (Comma)       = ","
 ppToken (Dollar)      = "$"
 ppToken (DoubleArrow) = "<->"
+ppToken (LArrow)      = "<-"
+ppToken (RArrow)      = "->"
 ppToken (DoubleColon) = "::"
 ppToken (Indent n)    = "Indentation at level " <> (T.pack $ show n)
 ppToken (LName n)     = n 
@@ -89,6 +93,8 @@ parsePositionedToken = P.try $ do
 parseToken :: Lexer u Token
 parseToken = P.choice
     [ P.try $ P.string "<->" *> P.notFollowedBy symbolChar *> pure DoubleArrow
+    , P.try $ P.string "<-" *> P.notFollowedBy symbolChar *> pure LArrow
+    , P.try $ P.string "->" *> P.notFollowedBy symbolChar *> pure RArrow
     , P.try $ P.string "::" *> P.notFollowedBy symbolChar *> pure DoubleColon
     , P.try $ P.char '(' *> pure LParen
     , P.try $ P.char ')' *> pure RParen
@@ -209,6 +215,12 @@ indent = token go P.<?> "indentation"
 
 doublearrow :: TokenParser ()
 doublearrow = match DoubleArrow
+
+larrow :: TokenParser ()
+larrow = match LArrow
+
+rarrow :: TokenParser ()
+rarrow = match RArrow
 
 lname :: TokenParser Text
 lname = token go P.<?> "identifier"

@@ -45,11 +45,12 @@ data Pattern
     | PLeft Pattern
     | PRight Pattern
     | PBind Text
+    | PApp Text Pattern
     | PProd Pattern Pattern
     deriving (Show)
 
-data Iso 
-    = Iso Text (Type, Type) [(Pattern, Pattern)]
-    deriving (Show)
+data Side = LHS | RHS
+
+type Iso = (Text, (Type, Type), [(Pattern, Pattern)])
 
 type TypeDef = (Text, Type)

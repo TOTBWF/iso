@@ -26,6 +26,8 @@ hoistErr (Left err) = do
   liftIO $ print err
   abort
 
+
+
 -- Commands
 
 quit :: a -> Repl ()
@@ -47,7 +49,7 @@ debug args = do
 
 typeof :: [String] -> Repl ()
 typeof args = do
-    i@(Iso t (t1, t2) _) <- hoistErr . runTokenParser "<stdin>" isomorphism . T.pack . unwords $ args
+    i@(t, (t1, t2), _) <- hoistErr . runTokenParser "<stdin>" isomorphism . T.pack . unwords $ args
     hoistErr . runInfer emptyCtx . check $ i
     liftIO . putStrLn $ (T.unpack t) ++ " :: " ++ ppType emptyCtx t1 ++ " <-> " ++ ppType emptyCtx t2
 

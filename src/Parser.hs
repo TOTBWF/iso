@@ -41,19 +41,20 @@ typ :: TokenParser Type
 typ = PX.buildExpressionParser typTable atyp
 
 pattern :: TokenParser Pattern
-pattern = pat >>= \p ->
-    (P.sepBy1 pat comma >>= \ps -> return $ foldl' PProd p ps)
-    <|> return p
+pattern = 
+    (P.try $ P.sepBy1 pat comma >>= \ps -> return $ foldl' PProd (head ps) (tail ps))
+    <|> pat
     where
     -- | Parses a single pattern instance
     pat :: TokenParser Pattern
     pat = P.choice
-        [ number' 1 *> pure (PBool True)
-        , number' 0 *> pure (PBool False)
+        [ P.try $ number' 1 *> pure (PBool True)
+        , P.try $ number' 0 *> pure (PBool False)
         , P.try $ lparen *> rparen *> pure PUnit
         , P.try $ PLeft <$> (reserved "Left" *> pattern)
         , P.try $ PRight <$> (reserved "Right" *> pattern)
-        , PBind <$> identifier
+        , P.try $ PApp <$> identifier <*> pattern
+        , P.try $ PBind <$> identifier
         , parens pattern
         ]
 
@@ -66,7 +67,7 @@ isomorphism = do
     doublearrow
     t2 <- typ
     ps <- P.many1 (pipe >> (,) <$> pattern <* doublearrow <*> pattern) 
-    return $ Iso i (t1, t2) ps
+    return $ (i, (t1, t2), ps)
 
 typedef :: TokenParser TypeDef
 typedef = do
@@ -78,3 +79,6 @@ typedef = do
 
 runTokenParser :: FilePath -> TokenParser a -> Text -> Either P.ParseError a
 runTokenParser filepath p t = (P.runParser p (ParseState 0) filepath) =<< lex filepath t
+
+-- -- | REPL Commands
+-- command :: 

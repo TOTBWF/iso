@@ -20,8 +20,8 @@ emptyCtx = Context
 lookupIso :: Context -> Text -> Maybe Iso
 lookupIso ctx t = find (go) $ isoDefs ctx
     where 
-    go (Iso t' _ _) = t' == t
-    go _ = False
+    go (t', _, _) = t' == t
+    -- go _ = False
 
 lookupType :: Context -> Text -> Maybe Type
 lookupType ctx t = snd <$> find (go) (typeDefs ctx)
