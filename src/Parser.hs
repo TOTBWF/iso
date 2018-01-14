@@ -2,6 +2,7 @@
 {-# LANGUAGE TupleSections #-}
 module Parser where
 
+import Prelude hiding (lex)
 import Control.Applicative ((<|>))
 import Text.Parsec ((<?>))
 import qualified Text.Parsec as P
@@ -77,5 +78,5 @@ typedef = do
     typecase :: TokenParser TypeCase
     typecase = TypeCase <$> uname <*> P.many uname
 
-runTokenParser :: FilePath -> TokenParser a -> [PositionedToken] -> Either P.ParseError a
-runTokenParser filepath p = P.runParser p (ParseState 0) filepath 
+runTokenParser :: FilePath -> TokenParser a -> Text -> Either P.ParseError a
+runTokenParser filepath p t = (P.runParser p (ParseState 0) filepath) =<< lex filepath t

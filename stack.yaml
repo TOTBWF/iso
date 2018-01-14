@@ -36,7 +36,11 @@ resolver: lts-10.3
 # non-dependency (i.e. a user package), and its test suites and benchmarks
 # will not be run. This is useful for tweaking upstream packages.
 packages:
-- .
+  - location: .
+  - location:
+      git: git@github.com:sdiehl/repline.git
+      commit: 852b8e109f66cdc6a90c15961c7fe9e272fe5c43
+    extra-dep: true
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 # extra-deps: []

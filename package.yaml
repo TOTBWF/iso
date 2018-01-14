@@ -29,7 +29,7 @@ dependencies:
 - repline
 
 executables:
-  iso-exe:
+  iso:
     main:                Main.hs
     source-dirs:         src
     ghc-options:

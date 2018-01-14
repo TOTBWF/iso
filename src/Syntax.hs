@@ -15,14 +15,14 @@ data Type
     | TName Text      -- User defined type
     deriving (Show)
 
-data Value
-    = VUnit             -- Constructs an element of the unit type
-    | VBool Bool        -- Constructs an element of the primitive boolean type
-    | VName Text        -- Named Value
-    | VLeft Value       -- Constructs an the LHS of an anonymous sum type
-    | VRight Value      -- Constructs an the RHS of an anonymous sum type
-    | VProd Value Value -- Constructs a product type
-    deriving (Show)
+-- data Value
+--     = VUnit             -- Constructs an element of the unit type
+--     | VBool Bool        -- Constructs an element of the primitive boolean type
+--     | VName Text        -- Named Value
+--     | VLeft Value       -- Constructs an the LHS of an anonymous sum type
+--     | VRight Value      -- Constructs an the RHS of an anonymous sum type
+--     | VProd Value Value -- Constructs a product type
+--     deriving (Show)
 
 data PatternBody
     = Empty
@@ -49,7 +49,6 @@ data TypeCase = TypeCase Text [Text]
 --     | SwapMul | AssocLMul | AssocRMul
 --     | DistribZero | FactorZero
 --     | Distrib | Factor
---     | Fold | Unfold
 --     | Id | Sym Iso | Compose Iso Iso   
 --     | SumI Iso Iso | ProdI Iso Iso
 --     | Trace Iso
