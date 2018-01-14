@@ -10,7 +10,7 @@ import Data.Maybe (catMaybes)
 -- | Evaluates a function Left to Right
 evalLeft :: Context -> Iso -> Value -> Value
 evalLeft ctx (_, _, ps) v = 
-    (\(bs,p) -> bindPattern ctx bs p) $ head $ catMaybes $ (\(p1, p2) -> (,p2) <$> matchPattern ctx p1 v) <$> ps
+    (\(bs,p) -> bindPattern False ctx bs p) $ head $ catMaybes $ (\(p1, p2) -> (,p2) <$> matchPattern ctx p1 v) <$> ps
 
 matchPattern :: Context -> Pattern -> Value -> Maybe [(Text, Value)]
 matchPattern _ (PUnit) (VUnit) = Just []
@@ -22,19 +22,23 @@ matchPattern ctx (PApp f p') v = matchPattern ctx p' <$> flip (evalRight ctx) v 
 matchPattern ctx (PProd p1 p2) (VProd v1 v2) = union <$> matchPattern ctx p1 v1 <*> matchPattern ctx p2 v2
 matchPattern _ _ _ = Nothing
 
-bindPattern :: Context -> [(Text, Value)] -> Pattern -> Value
-bindPattern _ _ (PUnit) = VUnit
-bindPattern _ _ (PBool b) = VBool b
-bindPattern ctx bs (PLeft p) = VLeft $ bindPattern ctx bs p
-bindPattern ctx bs (PRight p) = VRight $ bindPattern ctx bs p
-bindPattern _ bs (PBind n) = case find ((==) n . fst) bs of
+bindPattern :: Bool -> Context -> [(Text, Value)] -> Pattern -> Value
+bindPattern _ _ _ (PUnit) = VUnit
+bindPattern _ _ _ (PBool b) = VBool b
+bindPattern b ctx bs (PLeft p) = VLeft $ bindPattern b ctx bs p
+bindPattern b ctx bs (PRight p) = VRight $ bindPattern b ctx bs p
+bindPattern _ _ bs (PBind n) = case find ((==) n . fst) bs of
     Just (_, v) -> v -- We know that this is true
-bindPattern ctx bs (PProd p1 p2) = VProd (bindPattern ctx bs p1) (bindPattern ctx bs p2)
-bindPattern ctx bs (PApp f p) = case lookupIso ctx f of
-    Just i -> evalLeft ctx i (bindPattern ctx bs p) -- We know this case must be true
+bindPattern b ctx bs (PProd p1 p2) = VProd (bindPattern b ctx bs p1) (bindPattern b ctx bs p2)
+bindPattern inv ctx bs (PApp f p) = case lookupIso ctx f of
+    Just i -> 
+        if inv 
+        then evalRight ctx (invert i) (bindPattern inv ctx bs p)
+        else evalLeft ctx i (bindPattern inv ctx bs p) 
 
 evalRight :: Context -> Iso -> Value -> Value
-evalRight ctx i v = evalLeft ctx (invert i) v
+evalRight ctx (_, _, ps) v = 
+    (\(bs,p) -> bindPattern False ctx bs p) $ head $ catMaybes $ (\(p1, p2) -> (,p2) <$> matchPattern ctx p1 v) <$> ps
 
 invert :: Iso -> Iso
 invert (n, t, ps) = (n, swap t, swap <$> ps)

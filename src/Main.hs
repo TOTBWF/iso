@@ -74,16 +74,16 @@ context _ = do
     liftIO . putStrLn $ (show ctx)
 
 eval :: Bool -> [String] -> Repl ()
-eval invert args = do
+eval inv args = do
     ctx <- get
     p <- hoistErr . parsePattern . T.pack . unwords $ args
-    liftIO $ putStrLn $ ppValue ctx $ bindPattern ctx [] p
+    liftIO $ putStrLn $ ppValue ctx $ bindPattern inv ctx [] p
+
+-- load :: [String] -> Repl
 
 defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
-defaultMatcher = [
-    -- (":load"  , fileCompleter),
-    -- (":dump"  , fileCompleter)
-    ]
+defaultMatcher = 
+    [ (":load"  , fileCompleter) ]
 
 cmd :: [(String, [String] -> Repl ())]
 cmd = 
@@ -93,7 +93,8 @@ cmd =
     , ("typeof", typeof)
     , ("context", context)
     , ("evall", eval False)
-    -- , ("evalr", eval True)
+    , ("evalr", eval True)
+    -- , ("load", load)
     ]
 
 comp :: (Monad m) => WordCompleter m
