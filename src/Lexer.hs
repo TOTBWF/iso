@@ -127,7 +127,7 @@ parseToken = P.choice
     symbolChar = P.satisfy isSymbolChar
    
 isSymbolChar :: Char -> Bool
-isSymbolChar c = c `elem` ("!@#$%^&*-=\\|:<>/" :: [Char])
+isSymbolChar c = c `elem` ("!@#$%^&+*-=\\|:<>/" :: [Char])
 
 -- | We use Parsec lexeme support, but none of the other features
 lang :: PT.GenLanguageDef Text u Identity
