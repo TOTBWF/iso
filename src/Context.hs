@@ -9,6 +9,7 @@ data Context = Context
       isoDefs :: [Iso]
     , typeDefs :: [TypeDef]
     }
+    deriving (Show)
 
 emptyCtx :: Context
 emptyCtx = Context 

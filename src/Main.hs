@@ -3,6 +3,7 @@
 import Control.Monad.State.Strict
 import Control.Monad.Except
 
+import Data.Text (Text)
 import qualified Data.Text as T
 import Data.List (isPrefixOf, foldl')
 
@@ -16,9 +17,10 @@ import Parser
 import TypeCheck
 import Context
 import Pretty
+import Eval
 
 -- type Repl a = HaskelineT (StateT Context IO) a
-type Repl a = HaskelineT IO a
+type Repl a = HaskelineT (StateT Context IO) a
 
 hoistErr :: Show e => Either e a -> Repl a
 hoistErr (Right val) = return val
@@ -26,6 +28,20 @@ hoistErr (Left err) = do
   liftIO $ print err
   abort
 
+define :: Text -> Repl ()
+define line = do
+    ctx <- get
+    decl <- hoistErr $ parseDecl "<stdin>" line
+    case decl of
+        (TypeDecl t) -> do
+            let ctx' = extendType ctx t
+            put ctx'
+            return ()
+        (IsoDecl i) -> do
+            hoistErr $ runInfer ctx $ check i
+            let ctx' = extendIso ctx i
+            put ctx'
+            return ()
 
 
 -- Commands
@@ -43,15 +59,25 @@ help _ = liftIO $ do
 debug :: [String] -> Repl ()
 debug args = do
     i <- hoistErr . runTokenParser "<stdin>" isomorphism . T.pack . unwords $ args
-    liftIO . putStrLn $ "Input: " ++ show i
-    -- hoistErr . runInfer . check $ i
-    -- liftIO . putStrLn $ "Pattern Bindings: " ++ (show $ 
+    liftIO . putStrLn $ "AST: " ++ show i
 
 typeof :: [String] -> Repl ()
 typeof args = do
-    i@(t, (t1, t2), _) <- hoistErr . runTokenParser "<stdin>" isomorphism . T.pack . unwords $ args
-    hoistErr . runInfer emptyCtx . check $ i
-    liftIO . putStrLn $ (T.unpack t) ++ " :: " ++ ppType emptyCtx t1 ++ " <-> " ++ ppType emptyCtx t2
+    ctx <- get
+    case lookupIso ctx (T.pack $ unwords args) of
+        Just (_, (t1, t2), _) -> liftIO . putStrLn $ (unwords args) ++ " :: " ++ ppType emptyCtx t1 ++ " <-> " ++ ppType emptyCtx t2
+        Nothing -> liftIO . putStrLn $ "Error: " ++ (unwords args) ++ " is not defined"
+
+context :: a -> Repl ()
+context _ = do
+    ctx <- get
+    liftIO . putStrLn $ (show ctx)
+
+eval :: Bool -> [String] -> Repl ()
+eval invert args = do
+    ctx <- get
+    p <- hoistErr . parsePattern . T.pack . unwords $ args
+    liftIO $ putStrLn $ ppValue ctx $ bindPattern ctx [] p
 
 defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
 defaultMatcher = [
@@ -65,6 +91,9 @@ cmd =
     , ("help", help)
     , ("debug", debug)
     , ("typeof", typeof)
+    , ("context", context)
+    , ("evall", eval False)
+    -- , ("evalr", eval True)
     ]
 
 comp :: (Monad m) => WordCompleter m
@@ -72,8 +101,9 @@ comp n = do
     let cmds = ((':':) . fst) <$> cmd
     return $ filter (isPrefixOf n) (cmds)
     
-completer :: CompleterStyle IO
+completer :: CompleterStyle (StateT Context IO)
 completer = Prefix (wordCompleter comp) defaultMatcher
 
 main :: IO ()
-main = evalRepl "Iso> " (\_ -> return ()) cmd completer (return ())
+main = flip evalStateT emptyCtx
+    $ evalRepl "Iso> " (define . T.pack) cmd completer (return ())

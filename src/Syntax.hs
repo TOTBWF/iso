@@ -14,31 +14,14 @@ data Type
     | TName Text      -- User defined type
     deriving (Show, Eq)
 
--- | Returns the number of inhabitants of a type
+data Value
+    = VUnit             -- Constructs an element of the unit type
+    | VBool Bool        -- Constructs an element of the primitive boolean type
+    | VLeft Value       -- Constructs an the LHS of an anonymous sum type
+    | VRight Value      -- Constructs an the RHS of an anonymous sum type
+    | VProd Value Value -- Constructs a product type
+    deriving (Show, Eq)
 
--- size ctx (TName n) = do 
---     (TypeDef _ cases) <- lookupType ctx n
---     return (sum $ (mapM (\t -> size ctx =<< lookupType ctx t)) $ cases)
-
--- data Value
---     = VUnit             -- Constructs an element of the unit type
---     | VBool Bool        -- Constructs an element of the primitive boolean type
---     | VName Text        -- Named Value
---     | VLeft Value       -- Constructs an the LHS of an anonymous sum type
---     | VRight Value      -- Constructs an the RHS of an anonymous sum type
---     | VProd Value Value -- Constructs a product type
---     deriving (Show)
-
--- data PatternBody
---     = Empty
---     | Const Text PatternBody
---     | Bind Text PatternBody
---     | App Text [Text] PatternBody
---     | Nested Pattern PatternBody
---     deriving (Show)
-
--- data Pattern = Pattern Text PatternBody
---     deriving (Show)
 data Pattern
     = PUnit
     | PBool Bool
@@ -52,3 +35,7 @@ data Pattern
 type Iso = (Text, (Type, Type), [(Pattern, Pattern)])
 
 type TypeDef = (Text, Type)
+
+data Decl 
+    = TypeDecl TypeDef
+    | IsoDecl Iso

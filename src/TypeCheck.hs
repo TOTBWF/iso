@@ -56,7 +56,7 @@ checkCase (t1, t2) (p1, p2) = do
 
 -- | Checks to see if an isomorphism declaration is valid
 check :: Iso -> Infer ()
-check (_, t, ps) = mapM_ (checkCase t) ps
+check (_, (t1, t2), ps) = mapM_ (checkCase (t1, t2)) ps <* checkIsomorphism t1 t2
 
 -- | Computes the free variable set of a pattern
 freeVars :: Pattern -> Infer [Text]
@@ -86,8 +86,8 @@ size (TName n) = do
         Nothing -> throwError $ UndefinedTypeError n
 
 -- | Checks that 2 types can be isomorphic
-isomorphismCheck :: Type -> Type -> Infer ()
-isomorphismCheck t1 t2 = do
+checkIsomorphism :: Type -> Type -> Infer ()
+checkIsomorphism t1 t2 = do
     n1 <- size t1
     n2 <- size t2
     if (n1 /= n2) then throwError $ IsomorphicTypeError t1 t2
