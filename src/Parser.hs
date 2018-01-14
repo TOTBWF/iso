@@ -41,20 +41,21 @@ typ :: TokenParser Type
 typ = PX.buildExpressionParser typTable atyp
 
 pattern :: TokenParser Pattern
-pattern = Pattern <$> uname <*> patternBody
-
-patternBody :: TokenParser PatternBody
-patternBody = foldr ($) Empty <$> P.sepBy p comma
+pattern = pat >>= \p ->
+    (P.sepBy1 pat comma >>= \ps -> return $ foldl' PProd p ps)
+    <|> return p
     where
-    p = const
-        <|> P.try app
-        <|> bind
-        <|> nested
-        <?> "Expected Pattern"
-    const = Const <$> uname 
-    bind = Bind <$> lname 
-    app = App <$> lname <*> P.many1 lname 
-    nested = parens $ Nested <$> pattern
+    -- | Parses a single pattern instance
+    pat :: TokenParser Pattern
+    pat = P.choice
+        [ number' 1 *> pure (PBool True)
+        , number' 0 *> pure (PBool False)
+        , P.try $ lparen *> rparen *> pure PUnit
+        , P.try $ PLeft <$> (reserved "Left" *> pattern)
+        , P.try $ PRight <$> (reserved "Right" *> pattern)
+        , PBind <$> identifier
+        , parens pattern
+        ]
 
 isomorphism :: TokenParser Iso
 isomorphism = do

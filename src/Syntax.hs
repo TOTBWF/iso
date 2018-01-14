@@ -30,15 +30,23 @@ data Type
 --     | VProd Value Value -- Constructs a product type
 --     deriving (Show)
 
-data PatternBody
-    = Empty
-    | Const Text PatternBody
-    | Bind Text PatternBody
-    | App Text [Text] PatternBody
-    | Nested Pattern PatternBody
-    deriving (Show)
+-- data PatternBody
+--     = Empty
+--     | Const Text PatternBody
+--     | Bind Text PatternBody
+--     | App Text [Text] PatternBody
+--     | Nested Pattern PatternBody
+--     deriving (Show)
 
-data Pattern = Pattern Text PatternBody
+-- data Pattern = Pattern Text PatternBody
+--     deriving (Show)
+data Pattern
+    = PUnit
+    | PBool Bool
+    | PLeft Pattern
+    | PRight Pattern
+    | PBind Text
+    | PProd Pattern Pattern
     deriving (Show)
 
 data Iso 

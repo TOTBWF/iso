@@ -3,8 +3,8 @@ module TypeCheck where
 import Control.Monad.Except
 import Control.Monad.Reader
 import Control.Monad.Identity
-import Control.Monad (mapM_)
 import Data.Text (Text)
+import Data.List (union)
 
 import Syntax
 
@@ -34,9 +34,16 @@ infer (Compose i1 i2) = do
         throwError $ MismatchError t2 t3
 infer _ = throwError $ Debug "TODO: User Type Inference"
 
--- inferCase :: (Pattern, Pattern) -> Infer (Type, Type)
 
+-- | Computes the free variable set of a pattern
+freeVars :: Pattern -> Infer [Text]
+freeVars (PLeft p) = freeVars p
+freeVars (PRight p) = freeVars p
+freeVars (PProd p1 p2) = (union) <$> freeVars p1 <*> freeVars p2
+freeVars (PBind n) = return [n]
+freeVars _ = return []
 
+-- | Computes the number of inhabitants of the type
 size :: Type -> Infer Int
 size (TVoid) = return 0
 size (TUnit) = return 1

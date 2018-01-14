@@ -234,6 +234,12 @@ number = token go P.<?> "number"
     go (Number n) = Just n
     go _ = Nothing
 
+number' :: Integer -> TokenParser ()
+number' n = token go P.<?> "number"
+    where
+    go (Number n') | n == n' = Just ()
+    go _ = Nothing
+
 identifier :: TokenParser Text
 identifier = token go P.<?> "identifier"
     where
