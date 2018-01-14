@@ -8,6 +8,7 @@ import Data.Text (Text)
 import Data.List (union)
 
 import Syntax
+import Context
 
 data TypeError
     = Debug String
@@ -23,19 +24,6 @@ type Infer = ExceptT TypeError (Reader Context)
 
 runInfer :: Context -> Infer a -> Either TypeError a
 runInfer ctx i = runReader (runExceptT i) ctx
-
--- infer :: Iso -> Infer (Type, Type)
--- infer (Sym i) = do
---     (t1, t2) <- infer i
---     return (t2, t1)
--- infer (Compose i1 i2) = do
---     (t1, t2) <- infer i1
---     (t3, t4) <- infer i2
---     if t2 == t3 then
---         return (t1, t4)
---     else
---         throwError $ MismatchError t2 t3
--- infer _ = throwError $ Debug "TODO: User Type Inference"
 
 -- | Attempts to bind each free variable in a pattern to a type
 bindVars :: Pattern -> Type -> Infer [(Text, Type)]

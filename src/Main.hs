@@ -14,6 +14,8 @@ import Syntax
 import Lexer
 import Parser
 import TypeCheck
+import Context
+import Pretty
 
 -- type Repl a = HaskelineT (StateT Context IO) a
 type Repl a = HaskelineT IO a
@@ -47,7 +49,7 @@ typeof :: [String] -> Repl ()
 typeof args = do
     i@(Iso t (t1, t2) _) <- hoistErr . runTokenParser "<stdin>" isomorphism . T.pack . unwords $ args
     hoistErr . runInfer emptyCtx . check $ i
-    liftIO . putStrLn $ (T.unpack t) ++ "::" ++ show t1 ++ "<->" ++ show t2
+    liftIO . putStrLn $ (T.unpack t) ++ " :: " ++ ppType emptyCtx t1 ++ " <-> " ++ ppType emptyCtx t2
 
 defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
 defaultMatcher = [
