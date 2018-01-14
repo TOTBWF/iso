@@ -49,8 +49,6 @@ data Pattern
     | PProd Pattern Pattern
     deriving (Show)
 
-data Side = LHS | RHS
-
 type Iso = (Text, (Type, Type), [(Pattern, Pattern)])
 
 type TypeDef = (Text, Type)

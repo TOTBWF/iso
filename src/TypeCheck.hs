@@ -27,26 +27,30 @@ runInfer :: Context -> Infer a -> Either TypeError a
 runInfer ctx i = runReader (runExceptT i) ctx
 
 -- | Attempts to bind each free variable in a pattern to a type
-bindVars :: Side -> Pattern -> Type -> Infer [(Text, Type)]
-bindVars d p t = case (p,t) of
+bindVars :: Pattern -> Type -> Infer [(Text, Type)]
+bindVars p t = case (p,t) of
     (_, TVoid) -> throwError $ VoidError p
     (PBool _, TBool) -> return []
     (PUnit , TUnit) -> return []
-    (PLeft p', TSum t1 _) -> bindVars d p' t1
-    (PRight p', TSum _ t2) -> bindVars d p' t2
-    -- (PApp n p', t) -> do
-    --     ctx <- ask
-    --     case (d, lookupIso ctx n)  of
-    --         (Right, Just i) -> 
+    (PLeft p', TSum t1 _) -> bindVars p' t1
+    (PRight p', TSum _ t2) -> bindVars p' t2
+    (PApp n p', _) -> do
+        ctx <- ask
+        case lookupIso ctx n  of
+            Just (_, (t1, t2), _) -> 
+                if t2 /= t then throwError $ MismatchError t t2
+                else bindVars p' t1
+            Nothing -> throwError $ UndefinedIsoError n
+
     (PBind n, _) -> return [(n, t)]
-    (PProd p1 p2, TProd t1 t2) -> union <$> bindVars d p1 t1 <*> bindVars d p2 t2
+    (PProd p1 p2, TProd t1 t2) -> union <$> bindVars p1 t1 <*> bindVars p2 t2
     (_, _) -> throwError $ PatternMatchError p t
 
 -- | Checks to see that a case is valid
 checkCase :: (Type, Type) -> (Pattern, Pattern) -> Infer ()
 checkCase (t1, t2) (p1, p2) = do
-    b1 <- bindVars LHS p1 t1
-    b2 <- bindVars RHS p2 t2
+    b1 <- bindVars p1 t1
+    b2 <- bindVars p2 t2
     if b1 == b2 then return ()
     else throwError $ BindingError
 
