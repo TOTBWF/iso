@@ -28,9 +28,6 @@ dependencies:
 - pretty
 - repline
 
-library:
-  source-dirs: src
-
 executables:
   iso-exe:
     main:                Main.hs
@@ -39,7 +36,5 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    dependencies:
-    - iso
 
 
