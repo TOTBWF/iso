@@ -48,7 +48,8 @@ data Pattern
     | PProd Pattern Pattern
     deriving (Show)
 
-data Iso = Iso Text (Type, Type) [(Pattern, Pattern)]
+data Iso 
+    = Iso Text (Type, Type) [(Pattern, Pattern)]
     deriving (Show)
 
 type TypeDef = (Text, Type)
