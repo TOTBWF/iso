@@ -80,14 +80,21 @@ typedef = do
 runTokenParser :: FilePath -> TokenParser a -> Text -> Either P.ParseError a
 runTokenParser filepath p t = (P.runParser p (ParseState 0) filepath) =<< lex filepath t
 
+decl :: TokenParser Decl
+decl = P.choice
+    [ TypeDecl <$> typedef
+    , IsoDecl <$> isomorphism
+    ]
+
 parseDecl :: FilePath -> Text -> Either P.ParseError Decl
 parseDecl filepath t = runTokenParser filepath decl t
-    where
-    decl :: TokenParser Decl
-    decl = P.choice
-        [ TypeDecl <$> typedef
-        , IsoDecl <$> isomorphism
-        ]
 
 parsePattern :: Text -> Either P.ParseError Pattern
 parsePattern t = runTokenParser "<stdin>" pattern t
+
+parseFile :: FilePath -> Text -> Either P.ParseError Prog
+parseFile filepath t = runTokenParser filepath file t
+    where 
+    file = do
+        decls <- P.many decl
+        return decls

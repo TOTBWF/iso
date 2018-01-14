@@ -1,0 +1,14 @@
+-- This is an example of a type declaration
+type Int4 = Bool * Bool * Bool * Bool
+
+iso not :: Bool <-> Bool
+| 1 <-> 0
+| 0 <-> 1
+
+-- Successor function for 4-bit integers
+iso add1 :: Int4 <-> Int4
+| a,b,c,0 <-> a,b,c,1
+| a,b,0,1 <-> a,b,1,1
+| a,0,1,1 <-> a,1,1,1
+| 0,1,1,1 <-> 1,1,1,1
+| 1,1,1,1 <-> 0,0,0,0

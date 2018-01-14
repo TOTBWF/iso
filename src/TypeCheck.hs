@@ -97,3 +97,11 @@ checkIsomorphism t1 t2 = do
     n2 <- size t2
     if (n1 /= n2) then throwError $ IsomorphicTypeError t1 t2
     else return ()
+
+-- checkCoverage :: Iso -> Infer ()
+-- checkCoverage (_, (t1, t2), ps) = undefined
+--     where
+--     coverage :: Pattern -> Infer 
+--     coverage (PUnit) = return 1
+--     coverage (PBool _) = return 1
+--     coverage (PLeft p)

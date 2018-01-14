@@ -1,10 +1,11 @@
--- module Main where
+module Main where
 
 import Control.Monad.State.Strict
 import Control.Monad.Except
 
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import Data.List (isPrefixOf, foldl')
 
 import System.Exit
@@ -34,15 +35,10 @@ define line = do
     decl <- hoistErr $ parseDecl "<stdin>" line
     case decl of
         (TypeDecl t) -> do
-            let ctx' = extendType ctx t
-            put ctx'
-            return ()
+            put $ extendType ctx t
         (IsoDecl i) -> do
             hoistErr $ runInfer ctx $ check i
-            let ctx' = extendIso ctx i
-            put ctx'
-            return ()
-
+            put $ extendIso ctx i
 
 -- Commands
 
@@ -79,7 +75,22 @@ eval inv args = do
     p <- hoistErr . parsePattern . T.pack . unwords $ args
     liftIO $ putStrLn $ ppValue ctx $ bindPattern inv ctx [] p
 
--- load :: [String] -> Repl
+load :: [String] -> Repl ()
+load args = do
+    contents <- liftIO $ T.readFile (unwords args)
+    prog <- hoistErr $ parseFile (unwords args) contents
+    mapM_ (extendDecl) prog
+    where
+    extendDecl :: Decl -> Repl ()
+    extendDecl (TypeDecl t) = do
+        ctx <- get
+        put $ extendType ctx t
+        return ()
+    extendDecl (IsoDecl i) = do
+        ctx <- get
+        hoistErr $ runInfer ctx $ check i 
+        put $ extendIso ctx i
+        return ()
 
 defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
 defaultMatcher = 
@@ -94,7 +105,7 @@ cmd =
     , ("context", context)
     , ("evall", eval False)
     , ("evalr", eval True)
-    -- , ("load", load)
+    , ("load", load)
     ]
 
 comp :: (Monad m) => WordCompleter m

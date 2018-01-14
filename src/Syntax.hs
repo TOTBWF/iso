@@ -39,3 +39,5 @@ type TypeDef = (Text, Type)
 data Decl 
     = TypeDecl TypeDef
     | IsoDecl Iso
+
+type Prog = [Decl]
