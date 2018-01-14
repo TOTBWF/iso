@@ -44,6 +44,11 @@ bindVars p t = case (p,t) of
 
     (PBind n, _) -> return [(n, t)]
     (PProd p1 p2, TProd t1 t2) -> union <$> bindVars p1 t1 <*> bindVars p2 t2
+    (p, TName n) -> do
+        ctx <- ask
+        case lookupType ctx n of
+            Just t -> bindVars p t
+            Nothing -> throwError $ UndefinedTypeError n
     (_, _) -> throwError $ PatternMatchError p t
 
 -- | Checks to see that a case is valid
