@@ -1,9 +1,9 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Syntax where
 
 import Data.Text (Text)
+import Control.Monad (mapM)
+import Data.List (find)
 import qualified Data.Text as T
 
 data Type
@@ -13,7 +13,13 @@ data Type
     | TSum Type Type  -- Sum Type
     | TProd Type Type -- Product Type
     | TName Text      -- User defined type
-    deriving (Show)
+    deriving (Show, Eq)
+
+-- | Returns the number of inhabitants of a type
+
+-- size ctx (TName n) = do 
+--     (TypeDef _ cases) <- lookupType ctx n
+--     return (sum $ (mapM (\t -> size ctx =<< lookupType ctx t)) $ cases)
 
 -- data Value
 --     = VUnit             -- Constructs an element of the unit type
@@ -35,20 +41,49 @@ data PatternBody
 data Pattern = Pattern Text PatternBody
     deriving (Show)
 
-data Iso = Iso Text (Type, Type) [(Pattern, Pattern)]
+data Iso 
+    = Iso Text (Type, Type) [(Pattern, Pattern)]
+    | Sym Iso
+    | Compose Iso Iso
     deriving (Show)
 
-data TypeDef = TypeDef Text [TypeCase]
-    deriving (Show)
+type TypeDef = (Text, Type)
 
-data TypeCase = TypeCase Text [Text]
-    deriving (Show)
---     = ZeroE | ZeroI 
---     | SwapPlus | AssocLPlus | AssocRPlus
---     | UnitE | UnitI
---     | SwapMul | AssocLMul | AssocRMul
---     | DistribZero | FactorZero
---     | Distrib | Factor
---     | Id | Sym Iso | Compose Iso Iso   
---     | SumI Iso Iso | ProdI Iso Iso
---     | Trace Iso
+data Context = Context
+    {
+      isoDefs :: [Iso]
+    , typeDefs :: [TypeDef]
+    }
+
+emptyCtx :: Context
+emptyCtx = Context 
+    {
+      isoDefs = []
+    , typeDefs = []
+    }
+
+lookupIso :: Context -> Text -> Maybe Iso
+lookupIso ctx t = find (go) $ isoDefs ctx
+    where 
+    go (Iso t' _ _) = t' == t
+    go _ = False
+
+lookupType :: Context -> Text -> Maybe Type
+lookupType ctx t = snd <$> find (go) (typeDefs ctx)
+    where
+    go (t', _) = t' == t
+
+extendIso :: Context -> Iso -> Context
+extendIso ctx i = Context 
+    {
+      isoDefs = i:isoDefs ctx
+    , typeDefs = typeDefs ctx
+    }
+
+extendType :: Context -> TypeDef -> Context
+extendType ctx t = Context 
+    {
+      isoDefs = isoDefs ctx
+    , typeDefs = t:typeDefs ctx
+    } 
+

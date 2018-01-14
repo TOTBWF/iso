@@ -70,13 +70,10 @@ isomorphism = do
 typedef :: TokenParser TypeDef
 typedef = do
     reserved "type"
-    i <- uname
+    n <- uname
     equals
-    ts <- P.sepBy1 typecase pipe
-    return $ TypeDef i ts
-    where
-    typecase :: TokenParser TypeCase
-    typecase = TypeCase <$> uname <*> P.many uname
+    t <- typ
+    return (n, t)
 
 runTokenParser :: FilePath -> TokenParser a -> Text -> Either P.ParseError a
 runTokenParser filepath p t = (P.runParser p (ParseState 0) filepath) =<< lex filepath t
