@@ -45,9 +45,10 @@ patternBody :: TokenParser PatternBody
 patternBody = foldr ($) Empty <$> P.sepBy p comma
     where
     p = const
+        <|> P.try app
         <|> bind
-        <|> app
         <|> nested
+        <?> "Expected Pattern"
     const = Const <$> uname 
     bind = Bind <$> lname 
     app = App <$> lname <*> P.many1 lname 

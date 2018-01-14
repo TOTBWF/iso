@@ -118,7 +118,7 @@ parseToken = P.choice
     parseNumber = PT.natural tokenizer
 
     identStart :: Lexer u Char
-    identStart = P.alphaNum P.<|> P.oneOf "_"
+    identStart = P.lower P.<|> P.oneOf "_"
     
     identLetter :: Lexer u Char
     identLetter = P.alphaNum P.<|> P.oneOf "_'" 
