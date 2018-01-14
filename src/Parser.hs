@@ -26,6 +26,7 @@ atyp = P.choice
     [ P.try $ lcurly *> rcurly *> pure TVoid
     , P.try $ lparen *> rparen *> pure TUnit
     , P.try $ reserved "Bool" *> pure TBool
+    , P.try $ TName <$> uname
     ]
 
 typTable :: Operators Type

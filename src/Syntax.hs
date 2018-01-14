@@ -12,6 +12,7 @@ data Type
     | TBool           -- Primitive Bit Type, inhabited by true and false
     | TSum Type Type  -- Sum Type
     | TProd Type Type -- Product Type
+    | TName Text      -- User defined type
     deriving (Show)
 
 data Value
