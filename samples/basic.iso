@@ -8,7 +8,11 @@ iso not :: Bool <-> Bool
 -- Successor function for 4-bit integers
 iso add1 :: Int4 <-> Int4
 | a,b,c,0 <-> a,b,c,1
-| a,b,0,1 <-> a,b,1,1
-| a,0,1,1 <-> a,1,1,1
-| 0,1,1,1 <-> 1,1,1,1
+| a,b,0,1 <-> a,b,1,0
+| a,0,1,1 <-> a,1,0,0
+| 0,1,1,1 <-> 1,0,0,0
 | 1,1,1,1 <-> 0,0,0,0
+
+iso split :: Bool * Int4 <-> Int4 + Int4
+| 0,x <-> Left x
+| 1,x <-> Right x

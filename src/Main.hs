@@ -54,8 +54,9 @@ help _ = liftIO $ do
 
 debug :: [String] -> Repl ()
 debug args = do
-    i <- hoistErr . runTokenParser "<stdin>" isomorphism . T.pack . unwords $ args
-    liftIO . putStrLn $ "AST: " ++ show i
+    p <- hoistErr . parsePattern . T.pack . unwords $ args
+    -- i <- hoistErr . runTokenParser "<stdin>" isomorphism . T.pack . unwords $ args
+    liftIO . putStrLn $ "AST: " ++ show p
 
 typeof :: [String] -> Repl ()
 typeof args = do

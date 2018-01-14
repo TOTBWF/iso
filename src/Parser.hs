@@ -42,7 +42,7 @@ typ = PX.buildExpressionParser typTable atyp
 
 pattern :: TokenParser Pattern
 pattern = 
-    (P.try $ P.sepBy1 pat comma >>= \ps -> return $ foldl' PProd (head ps) (tail ps))
+    (P.sepBy1 pat comma >>= \ps -> return $ foldl' PProd (head ps) (tail ps))
     <|> pat
     where
     -- | Parses a single pattern instance

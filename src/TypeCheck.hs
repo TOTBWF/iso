@@ -18,6 +18,7 @@ data TypeError
     | MismatchError Type Type
     | PatternMatchError Pattern Type
     | CoverageError [Pattern]
+    | MultiMatchError Pattern [Pattern]
     | BindingError 
     | VoidError Pattern
     deriving (Show)
@@ -138,24 +139,16 @@ reconcile _ _ = False
 checkCoverage :: [Pattern] -> Type -> Infer ()
 checkCoverage ps t = do
     ps' <- generatePatterns t
-    res <- foldM (constrict) ps' ps
+    res <- foldM (constrict) ps' (reverse ps)
     case res of
         [] -> return ()
         xs -> throwError $ CoverageError xs
     where
     
     -- | Constricts down to coverage set
-    constrict ::[Pattern] -> Pattern -> Infer [Pattern]
+    constrict :: [Pattern] -> Pattern -> Infer [Pattern]
     constrict ps p = 
-        let ps' = filter (reconcile p) ps
-        in if ps == ps' then throwError $ CoverageError [p] else return ps'
+        let ps' = filter (not . reconcile p) ps
+        in if ps == ps' then throwError $ MultiMatchError p ps else return ps'
 
--- -- | Expands out a pattern 
--- expand :: Context -> Pattern -> Type -> [Pattern]
--- expand _ PUnit (TUnit) = [PUnit]
--- expand _ (PBool b) (TBool) = [PBool b]
--- expand _ x _ | matchesAny x = [x]
--- expand ctx (PLeft p) (TSum t1 _) = [ PLeft v | v <- expand ctx p t1 ]
--- expand ctx (PRight p) (TSum _ t2) = [ PRight v | v <- expand ctx p t2 ]
--- expand ctx (PProd p1 p2) (TProd t1 t2) = [ PProd v1 v2 | v1 <- expand ctx p1 t1, v2 <- expand ctx p2 t2 ]
--- expand _ _ _ = []
+
