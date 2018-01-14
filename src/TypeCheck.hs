@@ -17,6 +17,7 @@ data TypeError
     | IsomorphicTypeError Type Type
     | MismatchError Type Type
     | PatternMatchError Pattern Type
+    | CoverageError [Pattern]
     | BindingError 
     | VoidError Pattern
     deriving (Show)
@@ -61,7 +62,11 @@ checkCase (t1, t2) (p1, p2) = do
 
 -- | Checks to see if an isomorphism declaration is valid
 check :: Iso -> Infer ()
-check (_, (t1, t2), ps) = mapM_ (checkCase (t1, t2)) ps <* checkIsomorphism t1 t2
+check (_, (t1, t2), ps) = do
+    checkIsomorphism t1 t2
+    checkCoverage (fmap fst ps) t1
+    checkCoverage (fmap snd ps) t2
+    mapM_ (checkCase (t1, t2)) ps 
 
 -- | Computes the free variable set of a pattern
 freeVars :: Pattern -> Infer [Text]
@@ -98,10 +103,56 @@ checkIsomorphism t1 t2 = do
     if (n1 /= n2) then throwError $ IsomorphicTypeError t1 t2
     else return ()
 
--- checkCoverage :: Iso -> Infer ()
--- checkCoverage (_, (t1, t2), ps) = undefined
---     where
---     coverage :: Pattern -> Infer 
---     coverage (PUnit) = return 1
---     coverage (PBool _) = return 1
---     coverage (PLeft p)
+-- | Generates the set of all possible patterns
+generatePatterns :: Type -> Infer [Pattern]
+generatePatterns TVoid = return []
+generatePatterns TUnit = return [PUnit]
+generatePatterns TBool = return [PBool True, PBool False]
+generatePatterns (TSum t1 t2) = do
+    p1 <- generatePatterns t1
+    p2 <- generatePatterns t2
+    return (fmap PLeft p1 ++ fmap PRight p2)
+generatePatterns (TProd t1 t2) = do
+    p1 <- generatePatterns t1
+    p2 <- generatePatterns t2
+    return [ PProd v1 v2 | v1 <- p1, v2 <- p2 ]
+generatePatterns (TName n) = do
+    ctx <- ask
+    case lookupType ctx n of
+        Just t -> generatePatterns t
+        Nothing -> throwError $ UndefinedTypeError n
+
+-- | Checks to see if 2 patterns will reconcile
+-- | Assumes that the 2nd pattern consists of no free variables
+reconcile :: Pattern -> Pattern -> Bool
+reconcile (PUnit) (PUnit) = True
+reconcile (PBool b1) (PBool b2) = b1 == b2
+reconcile (PLeft p1) (PLeft p2) = reconcile p1 p2
+reconcile (PRight p1) (PRight p2) = reconcile p1 p2
+reconcile (PProd p1 p2) (PProd p3 p4) = reconcile p1 p3 && reconcile p2 p4
+reconcile (PBind _) _ = True
+reconcile (PApp _ _) _ = True -- Assumes that functions always work, not true
+reconcile _ _ = False
+
+
+checkCoverage :: [Pattern] -> Type -> Infer ()
+checkCoverage ps t = do
+    ps' <- generatePatterns t
+    case foldr (constrict) ps' ps of
+        [] -> return ()
+        xs -> throwError $ CoverageError xs
+    where
+    
+    -- | Constricts down to coverage set
+    constrict :: Pattern -> [Pattern] -> [Pattern]
+    constrict p ps = filter (reconcile p) ps
+
+-- -- | Expands out a pattern 
+-- expand :: Context -> Pattern -> Type -> [Pattern]
+-- expand _ PUnit (TUnit) = [PUnit]
+-- expand _ (PBool b) (TBool) = [PBool b]
+-- expand _ x _ | matchesAny x = [x]
+-- expand ctx (PLeft p) (TSum t1 _) = [ PLeft v | v <- expand ctx p t1 ]
+-- expand ctx (PRight p) (TSum _ t2) = [ PRight v | v <- expand ctx p t2 ]
+-- expand ctx (PProd p1 p2) (TProd t1 t2) = [ PProd v1 v2 | v1 <- expand ctx p1 t1, v2 <- expand ctx p2 t2 ]
+-- expand _ _ _ = []
