@@ -30,7 +30,7 @@ data Pattern
     | PBind Text
     | PApp Text Pattern
     | PProd Pattern Pattern
-    deriving (Show)
+    deriving (Show, Eq)
 
 type Iso = (Text, (Type, Type), [(Pattern, Pattern)])
 

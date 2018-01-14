@@ -138,14 +138,17 @@ reconcile _ _ = False
 checkCoverage :: [Pattern] -> Type -> Infer ()
 checkCoverage ps t = do
     ps' <- generatePatterns t
-    case foldr (constrict) ps' ps of
+    res <- foldM (constrict) ps' ps
+    case res of
         [] -> return ()
         xs -> throwError $ CoverageError xs
     where
     
     -- | Constricts down to coverage set
-    constrict :: Pattern -> [Pattern] -> [Pattern]
-    constrict p ps = filter (reconcile p) ps
+    constrict ::[Pattern] -> Pattern -> Infer [Pattern]
+    constrict ps p = 
+        let ps' = filter (reconcile p) ps
+        in if ps == ps' then throwError $ CoverageError [p] else return ps'
 
 -- -- | Expands out a pattern 
 -- expand :: Context -> Pattern -> Type -> [Pattern]
