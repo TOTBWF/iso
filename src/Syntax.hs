@@ -51,8 +51,8 @@ data Pattern
 
 data Iso 
     = Iso Text (Type, Type) [(Pattern, Pattern)]
-    | Sym Iso
-    | Compose Iso Iso
+    -- | Sym Iso
+    -- | Compose Iso Iso
     deriving (Show)
 
 type TypeDef = (Text, Type)

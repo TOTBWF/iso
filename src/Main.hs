@@ -1,4 +1,4 @@
-module Main where
+-- module Main where
 
 import Control.Monad.State.Strict
 import Control.Monad.Except
@@ -13,6 +13,7 @@ import System.Console.Repline
 import Syntax
 import Lexer
 import Parser
+import TypeCheck
 
 -- type Repl a = HaskelineT (StateT Context IO) a
 type Repl a = HaskelineT IO a
@@ -39,6 +40,14 @@ debug :: [String] -> Repl ()
 debug args = do
     i <- hoistErr . runTokenParser "<stdin>" isomorphism . T.pack . unwords $ args
     liftIO . putStrLn $ "Input: " ++ show i
+    -- hoistErr . runInfer . check $ i
+    -- liftIO . putStrLn $ "Pattern Bindings: " ++ (show $ 
+
+typeof :: [String] -> Repl ()
+typeof args = do
+    i@(Iso t (t1, t2) _) <- hoistErr . runTokenParser "<stdin>" isomorphism . T.pack . unwords $ args
+    hoistErr . runInfer emptyCtx . check $ i
+    liftIO . putStrLn $ (T.unpack t) ++ "::" ++ show t1 ++ "<->" ++ show t2
 
 defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
 defaultMatcher = [
@@ -51,6 +60,7 @@ cmd =
     [ ("quit", quit)
     , ("help", help)
     , ("debug", debug)
+    , ("typeof", typeof)
     ]
 
 comp :: (Monad m) => WordCompleter m
