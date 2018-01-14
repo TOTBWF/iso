@@ -66,5 +66,16 @@ isomorphism = do
     ps <- P.many1 (pipe >> (,) <$> pattern <* doublearrow <*> pattern) 
     return $ Iso i (t1, t2) ps
 
+typedef :: TokenParser TypeDef
+typedef = do
+    reserved "type"
+    i <- uname
+    equals
+    ts <- P.sepBy1 typecase pipe
+    return $ TypeDef i ts
+    where
+    typecase :: TokenParser TypeCase
+    typecase = TypeCase <$> uname <*> P.many uname
+
 runTokenParser :: FilePath -> TokenParser a -> [PositionedToken] -> Either P.ParseError a
 runTokenParser filepath p = P.runParser p (ParseState 0) filepath 

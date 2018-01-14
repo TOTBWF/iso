@@ -249,7 +249,7 @@ reserved s = token go P.<?> show s
     go _ = Nothing
 
 reservedNames :: [Text]
-reservedNames = [ "data" 
+reservedNames = [ "type" 
                 , "iso"
                 , "Bool"
                 ]

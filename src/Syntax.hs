@@ -34,7 +34,14 @@ data PatternBody
 
 data Pattern = Pattern Text PatternBody
     deriving (Show)
+
 data Iso = Iso Text (Type, Type) [(Pattern, Pattern)]
+    deriving (Show)
+
+data TypeDef = TypeDef Text [TypeCase]
+    deriving (Show)
+
+data TypeCase = TypeCase Text [Text]
     deriving (Show)
 --     = ZeroE | ZeroI 
 --     | SwapPlus | AssocLPlus | AssocRPlus
