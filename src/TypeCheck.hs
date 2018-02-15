@@ -1,3 +1,13 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-
+Known Issues: 
+1) There is a bug with coverage checking functions with product type returns
+    The solution is to expand out the function def with all of its params bound to empty binds, 
+    and then normalize
+2) The coverage checker currently has O(n!) where n is the size of the type
+    The solution is to ensure that no patterns overlap one another,
+    and then check the size of the coverage set.
+-}
 module TypeCheck where
 
 import Control.Monad.Except
@@ -136,6 +146,20 @@ reconcile _ (PBind _) = True
 reconcile (PApp _ _) _ = True -- Assumes that functions always work, not true
 reconcile _ (PApp _ _) = True -- Assumes that functions always work, not true
 reconcile _ _ = False
+
+-- Normalizes a pattern to ensure that all products are left-associative
+normalize :: Pattern -> Infer Pattern
+normalize (PProd p1 (PProd p2 p3)) = do
+    p1' <- normalize p1
+    p2' <- normalize p2
+    p3' <- normalize p3
+    p12 <- normalize (PProd p1' p2')
+    normalize (PProd p12 p3')
+-- normalize (PApp n _) = 
+normalize p = return p
+
+
+
 
 
 checkCoverage :: [Pattern] -> Type -> Infer ()
