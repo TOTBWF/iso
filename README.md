@@ -47,4 +47,7 @@ And backwards:
 > :evalr fn (0,0,1,0)
 (0,0,0,1)
 ```
-
+# Compiling and Running
+```
+stack build && stack exec iso
+```
