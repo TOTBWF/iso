@@ -16,6 +16,7 @@ iso add1 :: Int4 <-> Int4
 iso add2 :: Int4 <-> Int4
 | a <-> add1(add1(a))
 
+
 iso split :: Bool * Int4 <-> Int4 + Int4
 | 0,x <-> Left x
 | 1,x <-> Right x

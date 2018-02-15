@@ -13,6 +13,7 @@ import qualified Data.Text as T
 import Data.List (foldl')
 import Data.Functor.Identity
 
+import Pretty
 import Syntax
 import Lexer
 
@@ -42,7 +43,7 @@ typ = PX.buildExpressionParser typTable atyp
 
 pattern :: TokenParser Pattern
 pattern = 
-    (P.sepBy1 pat comma >>= \ps -> return $ foldl' PProd (head ps) (tail ps))
+    ((\ps -> return $ foldl' PProd (head ps) (tail ps)) =<< P.sepBy1 pat comma)
     <|> pat
     where
     -- | Parses a single pattern instance
@@ -53,7 +54,7 @@ pattern =
         , P.try $ lparen *> rparen *> pure PUnit
         , P.try $ PLeft <$> (reserved "Left" *> pattern)
         , P.try $ PRight <$> (reserved "Right" *> pattern)
-        , P.try $ PApp <$> identifier <*> pattern
+        , P.try $ PApp <$> identifier <*> parens pattern
         , P.try $ PBind <$> identifier
         , parens pattern
         ]

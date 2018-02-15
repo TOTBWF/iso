@@ -132,7 +132,9 @@ reconcile (PLeft p1) (PLeft p2) = reconcile p1 p2
 reconcile (PRight p1) (PRight p2) = reconcile p1 p2
 reconcile (PProd p1 p2) (PProd p3 p4) = reconcile p1 p3 && reconcile p2 p4
 reconcile (PBind _) _ = True
+reconcile _ (PBind _) = True
 reconcile (PApp _ _) _ = True -- Assumes that functions always work, not true
+reconcile _ (PApp _ _) = True -- Assumes that functions always work, not true
 reconcile _ _ = False
 
 

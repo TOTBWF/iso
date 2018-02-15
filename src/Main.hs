@@ -23,21 +23,27 @@ import Eval
 -- type Repl a = HaskelineT (StateT Context IO) a
 type Repl a = HaskelineT (StateT Context IO) a
 
-hoistErr :: Show e => Either e a -> Repl a
-hoistErr (Right val) = return val
-hoistErr (Left err) = do
-  liftIO $ print err
-  abort
+prettyError :: Pretty e => Context -> Either e a -> Repl a
+prettyError _ (Right val) = return val
+prettyError ctx (Left err) = do
+    liftIO $ putStrLn $ pp ctx err
+    abort
+
+dumpError :: Show e => Either e a -> Repl a
+dumpError (Right val) = return val
+dumpError (Left err) = do
+    liftIO $ print err
+    abort
 
 define :: Text -> Repl ()
 define line = do
     ctx <- get
-    decl <- hoistErr $ parseDecl "<stdin>" line
+    decl <- dumpError $ parseDecl "<stdin>" line
     case decl of
         (TypeDecl t) -> do
             put $ extendType ctx t
         (IsoDecl i) -> do
-            hoistErr $ runInfer ctx $ check i
+            prettyError ctx $ runInfer ctx $ check i
             put $ extendIso ctx i
 
 -- Commands
@@ -54,7 +60,7 @@ help _ = liftIO $ do
 
 debug :: [String] -> Repl ()
 debug args = do
-    p <- hoistErr . parsePattern . T.pack . unwords $ args
+    p <- dumpError . parsePattern . T.pack . unwords $ args
     -- i <- hoistErr . runTokenParser "<stdin>" isomorphism . T.pack . unwords $ args
     liftIO . putStrLn $ "AST: " ++ show p
 
@@ -62,7 +68,7 @@ typeof :: [String] -> Repl ()
 typeof args = do
     ctx <- get
     case lookupIso ctx (T.pack $ unwords args) of
-        Just (_, (t1, t2), _) -> liftIO . putStrLn $ (unwords args) ++ " :: " ++ ppType emptyCtx t1 ++ " <-> " ++ ppType emptyCtx t2
+        Just (_, (t1, t2), _) -> liftIO . putStrLn $ (unwords args) ++ " :: " ++ pp emptyCtx t1 ++ " <-> " ++ pp emptyCtx t2
         Nothing -> liftIO . putStrLn $ "Error: " ++ (unwords args) ++ " is not defined"
 
 context :: a -> Repl ()
@@ -73,13 +79,13 @@ context _ = do
 eval :: Bool -> [String] -> Repl ()
 eval inv args = do
     ctx <- get
-    p <- hoistErr . parsePattern . T.pack . unwords $ args
-    liftIO $ putStrLn $ ppValue ctx $ bindPattern inv ctx [] p
+    p <- dumpError . parsePattern . T.pack . unwords $ args
+    liftIO $ putStrLn $ pp ctx $ bindPattern inv ctx [] p
 
 load :: [String] -> Repl ()
 load args = do
     contents <- liftIO $ T.readFile (unwords args)
-    prog <- hoistErr $ parseFile (unwords args) contents
+    prog <- dumpError $ parseFile (unwords args) contents
     mapM_ (extendDecl) prog
     where
     extendDecl :: Decl -> Repl ()
@@ -89,9 +95,10 @@ load args = do
         return ()
     extendDecl (IsoDecl i) = do
         ctx <- get
-        hoistErr $ runInfer ctx $ check i 
+        prettyError ctx $ runInfer ctx $ check i 
         put $ extendIso ctx i
         return ()
+
 
 defaultMatcher :: MonadIO m => [(String, CompletionFunc m)]
 defaultMatcher = 
