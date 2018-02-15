@@ -1,5 +1,5 @@
 {-# LANGUAGE TupleSections #-}
-module Eval where
+module Eval(bindPattern) where
 
 import Syntax
 import Context
@@ -7,9 +7,9 @@ import Data.Text (Text)
 import Data.List (union, find)
 import Data.Maybe (catMaybes)
 
--- | Evaluates a function Left to Right
-evalLeft :: Context -> Iso -> Value -> Value
-evalLeft ctx (_, _, ps) v = 
+-- | Evaluates a function from Left to Right
+eval :: Context -> Iso -> Value -> Value
+eval ctx (_, _, ps) v = 
     (\(bs,p) -> bindPattern False ctx bs p) $ head $ catMaybes $ (\(p1, p2) -> (,p2) <$> matchPattern ctx p1 v) <$> ps
 
 matchPattern :: Context -> Pattern -> Value -> Maybe [(Text, Value)]
@@ -18,7 +18,7 @@ matchPattern _ (PBool b1) (VBool b2) | b1 == b2 = Just []
 matchPattern ctx (PLeft p) (VLeft v) = matchPattern ctx p v
 matchPattern ctx (PRight p) (VRight v) = matchPattern ctx p v
 matchPattern _ (PBind n) v = Just [(n, v)]
-matchPattern ctx (PApp f p') v = matchPattern ctx p' <$> flip (evalRight ctx) v =<< lookupIso ctx f
+matchPattern ctx (PApp f p') v = matchPattern ctx p' <$> flip (eval ctx) v . invert =<< lookupIso ctx f
 matchPattern ctx (PProd p1 p2) (VProd v1 v2) = union <$> matchPattern ctx p1 v1 <*> matchPattern ctx p2 v2
 matchPattern _ _ _ = Nothing
 
@@ -33,12 +33,8 @@ bindPattern b ctx bs (PProd p1 p2) = VProd (bindPattern b ctx bs p1) (bindPatter
 bindPattern inv ctx bs (PApp f p) = case lookupIso ctx f of
     Just i -> 
         if inv 
-        then evalRight ctx (invert i) (bindPattern inv ctx bs p)
-        else evalLeft ctx i (bindPattern inv ctx bs p) 
-
-evalRight :: Context -> Iso -> Value -> Value
-evalRight ctx (_, _, ps) v = 
-    (\(bs,p) -> bindPattern False ctx bs p) $ head $ catMaybes $ (\(p1, p2) -> (,p2) <$> matchPattern ctx p1 v) <$> ps
+        then eval ctx (invert i) (bindPattern inv ctx bs p)
+        else eval ctx i (bindPattern inv ctx bs p) 
 
 invert :: Iso -> Iso
 invert (n, t, ps) = (n, swap t, swap <$> ps)
