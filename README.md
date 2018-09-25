@@ -47,6 +47,12 @@ And backwards:
 > :evalr fn (0,0,1,0)
 (0,0,0,1)
 ```
+# Ideas/Future Plans
+- Parametric polymorphism has some interesting consequences (though it is not implemented)
+For example, consider the isomorphism `if :: Bool <-> Either a b`. Both sides actually hold the same
+amount of "information", even though they may not have the same "size". This could be an interesting
+area for further research.
+
 # Compiling and Running
 ```
 stack build && stack exec iso
